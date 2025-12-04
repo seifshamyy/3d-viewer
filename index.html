@@ -1,0 +1,63 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>360 API & Viewer</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+    <style>
+        body { margin: 0; font-family: sans-serif; }
+        #panorama { width: 100vw; height: 100vh; }
+        #upload-box { position: absolute; top: 20px; left: 20px; background: white; padding: 20px; z-index: 10; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    </style>
+</head>
+<body>
+
+<div id="panorama"></div>
+
+<div id="upload-box" style="display:none;">
+    <h3>360 API Generator</h3>
+    <input type="file" id="fileInput">
+    <button onclick="uploadFile()">Get Link</button>
+    <p id="status"></p>
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const imgUrl = urlParams.get('img');
+
+    if (imgUrl) {
+        // If there is a link, show the panorama
+        pannellum.viewer('panorama', {
+            "type": "equirectangular",
+            "panorama": imgUrl,
+            "autoLoad": true
+        });
+    } else {
+        // If no link, show the upload box so you can make one
+        document.getElementById('upload-box').style.display = 'block';
+        document.getElementById('panorama').style.background = '#333';
+    }
+
+    async function uploadFile() {
+        const file = document.getElementById('fileInput').files[0];
+        const status = document.getElementById('status');
+        if(!file) return;
+
+        status.innerText = "Uploading to API...";
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const res = await fetch('/api/upload', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        if (data.viewer_link) {
+            status.innerHTML = `Success! Copy your link:<br><a href="${data.viewer_link}">${data.viewer_link}</a>`;
+        } else {
+            status.innerText = "Error: " + JSON.stringify(data);
+        }
+    }
+</script>
+</body>
+</html>
